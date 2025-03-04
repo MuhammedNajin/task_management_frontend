@@ -28,7 +28,7 @@ export default function useSocket(options: SocketOptions = { withCredentials: tr
     }
 
     socketRef.current = io(socketUrl, {
-       path: '/socket.io/', 
+       path: '/socket.io', 
       transports: ['websocket', 'polling'],
       reconnection: true,
       withCredentials: options.withCredentials,
