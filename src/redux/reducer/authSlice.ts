@@ -50,11 +50,8 @@ import { getCurrentUser, loginUser, registerUser } from '../actions/actions';
           state.loading = true;
           state.error = null;
         })
-        .addCase(registerUser.fulfilled, (state, action) => {
-          console.log(action.payload)
-          state.user = action.payload;
-          state.isAuthenticated = true;
-          state.loading = false;
+        .addCase(registerUser.fulfilled, (state) => {
+          state.loading = false
           state.error = null;
         })
         .addCase(registerUser.rejected, (state, action) => {
