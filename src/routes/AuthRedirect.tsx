@@ -13,7 +13,11 @@ export const AuthRedirect: React.FC<AuthRedirectProps> = ({
 }) => {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
+  console.log("isAuthenticated", isAuthenticated);
+  
+
   if (!isAuthenticated) {
+    
     return <>{children}</>;
     
   }

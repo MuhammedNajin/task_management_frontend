@@ -15,6 +15,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
   if (!isAuthenticated || !user) {
+    console.error("user not authurized")
     toast.error("Please log in to access this page");
     return <Navigate to={redirectPath} replace />;
   }
