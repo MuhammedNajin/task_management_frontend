@@ -13,7 +13,7 @@ export default function useSocket(options: SocketOptions = { withCredentials: tr
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    // Log the environment variables for debugging
+    
     console.log('Environment:', {
       mode: import.meta.env.MODE,
       dev: import.meta.env.VITE_SOCKET_DEV_URL,

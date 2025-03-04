@@ -49,6 +49,8 @@ export const Home: React.FC = () => {
     if (!socket || !user?.id) return;
 
     socket.on('taskCreated', (newTask: Task) => {
+       console.log(" task created ", newTask);
+       
       if (newTask.userId === user.id) {
         setTasks((prevTasks) => [...prevTasks, newTask]);
         toast.success('New task added in real-time');
@@ -56,6 +58,7 @@ export const Home: React.FC = () => {
     });
 
     socket.on('taskUpdated', (updatedTask: Task) => {
+        console.log("task updated ", updatedTask)
       if (updatedTask.userId === user.id) {
         setTasks((prevTasks) =>
           prevTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
