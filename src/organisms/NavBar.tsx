@@ -11,11 +11,7 @@ import { LogOut } from 'lucide-react';
 import {  logout } from '../redux/reducer/authSlice';
 
 
-interface NavBarProps {
-   onAddTask?: (task: Task) => void
-}
-
-export const Navbar: React.FC<NavBarProps> = ({ onAddTask }) => {
+export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAppSelector((state) => state.auth);
   const { pathname } = useLocation();
@@ -26,9 +22,9 @@ export const Navbar: React.FC<NavBarProps> = ({ onAddTask }) => {
     { label: 'Analytics', href: '/analytics' },
   ];
 
-  // const handleTaskCreated = (task: Task) => {
-  //   console.log('Task created, consider refreshing task list', task);
-  // };
+  const handleTaskCreated = (task: Task) => {
+    console.log('Task created, consider refreshing task list', task);
+  };
 
   const handleLogout = () => {
     dispatch(logout());
@@ -112,7 +108,7 @@ export const Navbar: React.FC<NavBarProps> = ({ onAddTask }) => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         userId={user?.id ?? ''}
-        onTaskCreated={onAddTask}
+        onTaskCreated={handleTaskCreated}
       />
     </nav>
   );

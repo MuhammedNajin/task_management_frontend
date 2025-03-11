@@ -47,7 +47,6 @@ export const TaskCreationModal: React.FC<TaskModalProps> = ({
   isOpen,
   onClose,
   userId,
-  onTaskCreated,
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
