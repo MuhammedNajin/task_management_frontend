@@ -22,8 +22,8 @@ export const Navbar: React.FC = () => {
     { label: 'Analytics', href: '/analytics' },
   ];
 
-  const handleTaskCreated = (task: Task) => {
-    console.log('Task created, consider refreshing task list', task);
+  const handleTaskCreated = () => {
+    console.log('Task created, consider refreshing task list');
   };
 
   const handleLogout = () => {
