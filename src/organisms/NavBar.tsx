@@ -3,7 +3,7 @@ import { Button } from '../atoms/Button';
 import { NavLink } from '../molecules/NavLink';
 import { Avatar } from '../molecules/Avatar';
 import { MobileMenu } from './NavBarMobileMenu';
-import { NavItem, Task } from '../types/Task';
+import { NavItem } from '../types/Task';
 import { TaskCreationModal } from './TaskCreationModal';
 import { useAppSelector, useAppDispatch } from '../hooks/redux';
 import { useLocation, useNavigate } from 'react-router-dom';
