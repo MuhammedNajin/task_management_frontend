@@ -1,8 +1,8 @@
 
   import { createSlice } from '@reduxjs/toolkit';
+  import { getCurrentUser, loginUser, registerUser } from '../actions/actions';
   import { AuthState } from '../../types/User';
   import authService from '../../service/api/auth';
-import { getCurrentUser, loginUser, registerUser } from '../actions/actions';
   
   const initialState: AuthState = {
     user: null,
@@ -27,7 +27,6 @@ import { getCurrentUser, loginUser, registerUser } from '../actions/actions';
       },
     },
     extraReducers: (builder) => {
-      // Login cases
       builder
         .addCase(loginUser.pending, (state) => {
           state.loading = true;

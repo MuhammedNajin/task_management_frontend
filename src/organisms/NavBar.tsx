@@ -3,14 +3,19 @@ import { Button } from '../atoms/Button';
 import { NavLink } from '../molecules/NavLink';
 import { Avatar } from '../molecules/Avatar';
 import { MobileMenu } from './NavBarMobileMenu';
-import { NavItem } from '../types/Task';
+import { NavItem, Task } from '../types/Task';
 import { TaskCreationModal } from './TaskCreationModal';
 import { useAppSelector, useAppDispatch } from '../hooks/redux';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import {  logout } from '../redux/reducer/authSlice';
 
-export const Navbar: React.FC = () => {
+
+interface NavBarProps {
+   onAddTask?: (task: Task) => void
+}
+
+export const Navbar: React.FC<NavBarProps> = ({ onAddTask }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAppSelector((state) => state.auth);
   const { pathname } = useLocation();
@@ -21,9 +26,9 @@ export const Navbar: React.FC = () => {
     { label: 'Analytics', href: '/analytics' },
   ];
 
-  const handleTaskCreated = () => {
-    console.log('Task created, consider refreshing task list');
-  };
+  // const handleTaskCreated = (task: Task) => {
+  //   console.log('Task created, consider refreshing task list', task);
+  // };
 
   const handleLogout = () => {
     dispatch(logout());
@@ -107,7 +112,7 @@ export const Navbar: React.FC = () => {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         userId={user?.id ?? ''}
-        onTaskCreated={handleTaskCreated}
+        onTaskCreated={onAddTask}
       />
     </nav>
   );

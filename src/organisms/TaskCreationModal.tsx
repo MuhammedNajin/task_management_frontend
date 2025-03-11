@@ -13,16 +13,25 @@ import { ModalFooter } from '../molecules/ModalFooter';
 import TaskService from '../service/api/task';
 import toast from 'react-hot-toast';
 
+// Define the task schema with dueDate validation
 const taskSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title must be 100 characters or less'),
   description: z.string().min(1, 'Description is required').max(1000, 'Description must be 1000 characters or less'),
   status: z.enum(['pending', 'in_progress', 'completed']),
   priority: z.enum(['low', 'medium', 'high']),
   category: z.string().max(50, 'Category must be 50 characters or less').optional(),
-  dueDate: z.string().optional().refine((val) => !val || !isNaN(Date.parse(val)), {
-    message: 'Invalid date format',
-  }),
-  subtasks: z.array(z.string().min(1, 'Subtask cannot be empty').max(200, 'Subtask must be 200 characters or less')).optional(),
+  dueDate: z
+    .string()
+    .optional()
+    .refine((val) => !val || !isNaN(Date.parse(val)), {
+      message: 'Invalid date format',
+    })
+    .refine((val) => !val || new Date(val) >= new Date(new Date().setHours(0, 0, 0, 0)), {
+      message: 'Due date cannot be earlier than today',
+    }),
+  subtasks: z
+    .array(z.string().min(1, 'Subtask cannot be empty').max(200, 'Subtask must be 200 characters or less'))
+    .optional(),
   userId: z.string().min(1, 'User ID is required'),
   slug: z.string().min(1, 'Slug is required'),
 });
@@ -93,7 +102,7 @@ export const TaskCreationModal: React.FC<TaskModalProps> = ({
         position: 'top-right',
       });
       resetForm();
-      onTaskCreated?.();
+      window.location.href = '/home'
       onClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create task';
@@ -228,6 +237,7 @@ export const TaskCreationModal: React.FC<TaskModalProps> = ({
                       setDueDate(e.target.value);
                       setErrors((prev) => ({ ...prev, dueDate: undefined }));
                     }}
+                    min={new Date().toISOString().split('T')[0]} // Set min attribute to today
                     className="pr-10"
                     disabled={isSubmitting}
                   />
@@ -260,7 +270,7 @@ export const TaskCreationModal: React.FC<TaskModalProps> = ({
         <ModalFooter
           onCancel={onClose}
           onSave={handleSubmit}
-          isSaveDisabled={!!errors.title || !!errors.description || isSubmitting}
+          isSaveDisabled={!!errors.title || !!errors.description || !!errors.dueDate || isSubmitting}
           saveText={isSubmitting ? 'Saving...' : 'Save'}
         />
       </div>
