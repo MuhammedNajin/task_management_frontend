@@ -22,7 +22,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             <Text className="w-6 h-6 bg-indigo-100 text-indigo-700 rounded-md flex items-center justify-center mr-2 text-xs font-medium">
               T
             </Text>
-         
           </div>
           <PriorityBadge priority={task.priority} />
         </div>
@@ -30,20 +29,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
         <Text className="font-medium text-lg text-gray-900 mb-1">{task.title}</Text>
         <Text className="text-sm text-gray-500 line-clamp-1 mb-3">{task.description}</Text>
 
-        <div className="border-t border-gray-100 pt-3 mt-2 flex items-center justify-between">
-          <div className="flex items-center">
+        <div className="border-t border-gray-200 pt-3 mt-2 flex items-center justify-between">
           <StatusBadge status={task.status} />
-          </div>
-          <div className="flex items-center space-x-3">
-            
-            <Button
-              onClick={() => setShowModal(true)}
-              className="bg-gray-100 text-gray-800 hover:bg-gray-200"
-            >
-              <Eye className="w-4 h-4 mr-1" />
-           
-            </Button>
-          </div>
+          <Button
+            onClick={() => setShowModal(true)}
+            className="bg-gray-100 text-gray-800 hover:bg-gray-200"
+          >
+            <Eye className="w-4 h-4 mr-1" />
+          </Button>
         </div>
       </div>
 

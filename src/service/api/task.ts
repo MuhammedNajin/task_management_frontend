@@ -16,6 +16,22 @@ class TaskService {
     }
   }
 
+
+  async updateSubtaskStatus(taskId: string, subtaskIndex: number, completed: boolean): Promise<Task> {
+    try {
+      const response = await api.patch<ApiResponse<Task>>(
+        `/tasks/${taskId}/subtasks/${subtaskIndex}`,
+        { completed }
+      );
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || 'Failed to update subtask status');
+      }
+      throw new Error('Network error. Please try again later.');
+    }
+  }
+
   async getTaskById(taskId: string): Promise<Task> {
     try {
       const response = await api.get<ApiResponse<Task>>(`/tasks/${taskId}`);
@@ -28,9 +44,20 @@ class TaskService {
     }
   }
 
-  async getUserTasks(userId: string): Promise<Task[]> {
+  async getUserTasks(
+    userId: string,
+    status?: string,
+    priority?: string,
+    search?: string
+  ): Promise<Task[]> {
     try {
-      const response = await api.get<ApiResponse<Task[]>>(`/users/${userId}/tasks`);
+      const response = await api.get<ApiResponse<Task[]>>(`/users/${userId}/tasks`, {
+        params: {
+          status: status !== 'all' ? status : undefined,
+          priority: priority !== 'all' ? priority : undefined,
+          search,
+        },
+      });
       return response.data.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {

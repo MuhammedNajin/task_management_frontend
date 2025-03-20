@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, Edit, Trash2, Plus } from 'lucide-react';
 import { Button } from '../atoms/Button';
@@ -46,21 +47,16 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const updatedTask = await TaskService.updateTask(task.id!, editedTask);
-      console.log("updated", updatedTask)
+      const updatedTask = await TaskService.updateTask(task.id!, {
+        ...editedTask,
+      });
       setTask(updatedTask);
       setEditedTask(updatedTask);
-      toast.success('Task updated successfully', {
-        duration: 4000,
-        position: 'top-right',
-      });
+      toast.success('Task updated successfully');
       setIsEditing(false);
       onTaskUpdated?.(updatedTask);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update task', {
-        duration: 4000,
-        position: 'top-right',
-      });
+      toast.error(err instanceof Error ? err.message : 'Failed to update task');
     } finally {
       setIsSaving(false);
     }
@@ -70,17 +66,11 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
     setIsDeleting(true);
     try {
       await TaskService.deleteTask(task.id!);
-      toast.success('Task deleted successfully', {
-        duration: 4000,
-        position: 'top-right',
-      });
+      toast.success('Task deleted successfully');
       onTaskDeleted?.(task.id!);
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete task', {
-        duration: 4000,
-        position: 'top-right',
-      });
+      toast.error(err instanceof Error ? err.message : 'Failed to delete task');
     } finally {
       setIsDeleting(false);
     }
@@ -90,7 +80,9 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
     if (newSubtask.trim()) {
       setEditedTask({
         ...editedTask,
-        subtasks: editedTask.subtasks ? [...editedTask.subtasks, newSubtask.trim()] : [newSubtask.trim()],
+        subtasks: editedTask.subtasks
+          ? [...editedTask.subtasks, { title: newSubtask.trim(), completed: false }]
+          : [{ title: newSubtask.trim(), completed: false }],
       });
       setNewSubtask('');
     }
@@ -104,13 +96,45 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
     });
   };
 
+  const toggleSubtaskStatus = async (index: number) => {
+    if (!task.id || !editedTask.subtasks) return;
+    const currentSubtask = editedTask.subtasks[index];
+    const newCompletedStatus = !currentSubtask.completed;
+
+    try {
+      const updatedTask = await TaskService.updateSubtaskStatus(task.id, index, newCompletedStatus);
+      
+      const allCompleted = updatedTask.subtasks?.every(sub => sub.completed);
+      if (allCompleted && updatedTask.status !== 'completed') {
+        const completedTask = await TaskService.updateTask(task.id, {
+          ...updatedTask,
+          status: 'completed',
+        });
+        setTask(completedTask);
+        setEditedTask(completedTask);
+        onTaskUpdated?.(completedTask);
+        toast.success('Task marked as completed');
+      } else {
+        setTask(updatedTask);
+        setEditedTask(updatedTask);
+        onTaskUpdated?.(updatedTask);
+        toast.success('Subtask status updated');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update subtask');
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-screen overflow-auto">
- 
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <Text className="text-lg font-medium text-gray-900">Task Details</Text>
-          <Button onClick={onClose} className="text-gray-950 hover:text-gray-500 bg-gray-100 hover:bg-gray-200" disabled={isSaving || isDeleting}>
+          <Button
+            onClick={onClose}
+            className="text-gray-950 hover:text-gray-500 bg-gray-100 hover:bg-gray-200"
+            disabled={isSaving || isDeleting}
+          >
             <X className="w-5 h-5" />
           </Button>
         </div>
@@ -138,7 +162,15 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                   <ul className="space-y-2">
                     {task.subtasks.map((subtask, index) => (
                       <li key={index} className="flex items-center p-2 bg-gray-50 rounded-md">
-                        <Text className="text-gray-900">{subtask}</Text>
+                        <input
+                          type="checkbox"
+                          checked={subtask.completed}
+                          onChange={() => toggleSubtaskStatus(index)}
+                          className="mr-2"
+                        />
+                        <Text className={`text-gray-900 ${subtask.completed ? 'line-through' : ''}`}>
+                          {subtask.title}
+                        </Text>
                       </li>
                     ))}
                   </ul>
@@ -205,7 +237,9 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                   <ul className="space-y-2 max-h-40 overflow-auto">
                     {editedTask.subtasks.map((subtask, index) => (
                       <li key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                        <Text className="text-gray-900">{subtask}</Text>
+                        <Text className={`text-gray-900 ${subtask.completed ? 'line-through' : ''}`}>
+                          {subtask.title}
+                        </Text>
                         <Button
                           onClick={() => removeSubtask(index)}
                           className="text-red-600 hover:text-red-700 disabled:text-gray-400"
@@ -219,7 +253,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <Text className="block text-sm font-medium text-gray-700">Priority</Text>
                   <Select
@@ -239,25 +273,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                     disabled={isSaving || isDeleting}
                   />
                 </div>
-                <div>
-                  <Text className="block text-sm font-medium text-gray-700">Status</Text>
-                  <Select
-                    id="status"
-                    value={editedTask.status}
-                    onChange={(e) =>
-                      setEditedTask({
-                        ...editedTask,
-                        status: e.target.value as 'pending' | 'in_progress' | 'completed',
-                      })
-                    }
-                    options={[
-                      { value: 'pending', label: 'Pending' },
-                      { value: 'in_progress', label: 'In Progress' },
-                      { value: 'completed', label: 'Completed' },
-                    ]}
-                    disabled={isSaving || isDeleting}
-                  />
-                </div>
+
               </div>
             </>
           )}
@@ -282,7 +298,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                   'Deleting...'
                 ) : (
                   <>
-                    <Trash2 className="w-4 h-4 mr-1" /> 
+                    <Trash2 className="w-4 h-4 mr-1" />
                   </>
                 )}
               </Button>
@@ -292,7 +308,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
               <Button
                 onClick={() => {
                   setIsEditing(false);
-                  setEditedTask({ ...task }); // Reset editedTask to current task on cancel
+                  setEditedTask({ ...task });
                 }}
                 className="text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:bg-gray-200"
                 disabled={isSaving}

@@ -13,7 +13,6 @@ import { ModalFooter } from '../molecules/ModalFooter';
 import TaskService from '../service/api/task';
 import toast from 'react-hot-toast';
 
-// Define the task schema with dueDate validation
 const taskSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title must be 100 characters or less'),
   description: z.string().min(1, 'Description is required').max(1000, 'Description must be 1000 characters or less'),
@@ -30,7 +29,12 @@ const taskSchema = z.object({
       message: 'Due date cannot be earlier than today',
     }),
   subtasks: z
-    .array(z.string().min(1, 'Subtask cannot be empty').max(200, 'Subtask must be 200 characters or less'))
+    .array(
+      z.object({
+        title: z.string().min(1, 'Subtask cannot be empty').max(200, 'Subtask must be 200 characters or less'),
+        completed: z.boolean(),
+      })
+    )
     .optional(),
   userId: z.string().min(1, 'User ID is required'),
   slug: z.string().min(1, 'Slug is required'),
@@ -54,7 +58,7 @@ export const TaskCreationModal: React.FC<TaskModalProps> = ({
   const [priority, setPriority] = useState<Task['priority']>('medium');
   const [category, setCategory] = useState('');
   const [dueDate, setDueDate] = useState<string>('');
-  const [subtasks, setSubtasks] = useState<string[]>([]);
+  const [subtasks, setSubtasks] = useState<{ title: string; completed: boolean }[]>([]); // Updated type
   const [newSubtask, setNewSubtask] = useState('');
   const [errors, setErrors] = useState<
     Partial<Record<keyof Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'isDeleted'>, string>> & {
@@ -101,7 +105,7 @@ export const TaskCreationModal: React.FC<TaskModalProps> = ({
         position: 'top-right',
       });
       resetForm();
-      window.location.href = '/home'
+      window.location.href = '/home';
       onClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create task';
@@ -122,7 +126,7 @@ export const TaskCreationModal: React.FC<TaskModalProps> = ({
         setErrors({ subtasks: subtaskResult.error.errors[0].message });
         return;
       }
-      setSubtasks([...subtasks, newSubtask.trim()]);
+      setSubtasks([...subtasks, { title: newSubtask.trim(), completed: false }]); // Add as object
       setNewSubtask('');
       setErrors((prev) => ({ ...prev, subtasks: undefined }));
     }
@@ -183,19 +187,6 @@ export const TaskCreationModal: React.FC<TaskModalProps> = ({
             </FormField>
 
             <div className="grid grid-cols-2 gap-4">
-              <FormField label="Status" htmlFor="status">
-                <Select
-                  id="status"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as Task['status'])}
-                  options={[
-                    { value: 'pending', label: 'Pending' },
-                    { value: 'in_progress', label: 'In Progress' },
-                    { value: 'completed', label: 'Completed' },
-                  ]}
-                  disabled={isSubmitting}
-                />
-              </FormField>
               <FormField label="Priority" htmlFor="priority">
                 <Select
                   id="priority"
@@ -236,7 +227,7 @@ export const TaskCreationModal: React.FC<TaskModalProps> = ({
                       setDueDate(e.target.value);
                       setErrors((prev) => ({ ...prev, dueDate: undefined }));
                     }}
-                    min={new Date().toISOString().split('T')[0]} // Set min attribute to today
+                    min={new Date().toISOString().split('T')[0]}
                     className="pr-10"
                     disabled={isSubmitting}
                   />
@@ -257,7 +248,11 @@ export const TaskCreationModal: React.FC<TaskModalProps> = ({
                 disabled={isSubmitting}
               />
               {subtasks.length > 0 && (
-                <SubtaskList subtasks={subtasks} onRemove={removeSubtask} disabled={isSubmitting} />
+                <SubtaskList
+                  subtasks={subtasks.map(subtask => subtask.title)} 
+                  onRemove={removeSubtask}
+                  disabled={isSubmitting}
+                />
               )}
               {errors.subtasks && <p className="mt-1 text-sm text-red-600">{errors.subtasks}</p>}
             </FormField>
