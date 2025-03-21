@@ -8,7 +8,7 @@ export const ImageSection: React.FC = () => (
 
       <div className="h-64 w-full flex items-center justify-center">
         <img 
-          src="/api/placeholder/640/320" 
+          src="/sideImage.png" 
           alt="CRM Dashboard Preview" 
           className="max-w-full max-h-full object-contain"
         />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, Edit, Trash2, Plus } from 'lucide-react';
 import { Button } from '../atoms/Button';
@@ -31,10 +30,12 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   const [newSubtask, setNewSubtask] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [length, setLength] = useState(0)
 
   useEffect(() => {
     setTask(initialTask);
     setEditedTask({ ...initialTask });
+    setLength(initialTask?.subtasks?.length || 0)
   }, [initialTask]);
 
   const formatDate = (dateString: string | Date) =>
@@ -47,8 +48,17 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
+
+      let flag = false;
+
+      if(editedTask.subtasks) {
+
+        if( length < editedTask?.subtasks.length ||  length > editedTask?.subtasks.length)
+           flag = true;
+      } 
       const updatedTask = await TaskService.updateTask(task.id!, {
         ...editedTask,
+        status: flag ? 'in_progress' : editedTask.status, 
       });
       setTask(updatedTask);
       setEditedTask(updatedTask);
@@ -102,24 +112,33 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
     const newCompletedStatus = !currentSubtask.completed;
 
     try {
-      const updatedTask = await TaskService.updateSubtaskStatus(task.id, index, newCompletedStatus);
-      
-      const allCompleted = updatedTask.subtasks?.every(sub => sub.completed);
-      if (allCompleted && updatedTask.status !== 'completed') {
-        const completedTask = await TaskService.updateTask(task.id, {
-          ...updatedTask,
+    
+      const updatedTaskWithSubtask = await TaskService.updateSubtaskStatus(task.id, index, newCompletedStatus);
+    
+      let finalTask = updatedTaskWithSubtask;
+      if (updatedTaskWithSubtask.status !== 'in_progress') {
+
+        console.log("updated ..................")
+        finalTask = await TaskService.updateTask(task.id, {
+          ...updatedTaskWithSubtask,
+          status: 'in_progress' as const
+        });
+      }
+
+      const allCompleted = finalTask.subtasks?.every(sub => sub.completed);
+      if (allCompleted && finalTask.status !== 'completed') {
+        finalTask = await TaskService.updateTask(task.id, {
+          ...finalTask,
           status: 'completed',
         });
-        setTask(completedTask);
-        setEditedTask(completedTask);
-        onTaskUpdated?.(completedTask);
         toast.success('Task marked as completed');
       } else {
-        setTask(updatedTask);
-        setEditedTask(updatedTask);
-        onTaskUpdated?.(updatedTask);
         toast.success('Subtask status updated');
       }
+
+      setTask(finalTask);
+      setEditedTask(finalTask);
+      onTaskUpdated?.(finalTask);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update subtask');
     }
@@ -144,10 +163,15 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             <>
               <div className="space-y-4">
                 <div>
-                  <Text className="text-xl font-semibold text-gray-900">{task.title}</Text>
+                  <Text className="text-xl font-semibold text-gray-900 capitalize">{task.title}</Text>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <StatusBadge status={task.status} />
                     <PriorityBadge priority={task.priority} />
+                    {task.category && (
+                      <Text className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full capitalize">
+                        {task.category}
+                      </Text>
+                    )}
                   </div>
                 </div>
                 <div>
@@ -166,7 +190,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                           type="checkbox"
                           checked={subtask.completed}
                           onChange={() => toggleSubtaskStatus(index)}
-                          className="mr-2"
+                          className="mr-2 h-4 w-4 text-indigo-600 border-gray-300 rounded"
                         />
                         <Text className={`text-gray-900 ${subtask.completed ? 'line-through' : ''}`}>
                           {subtask.title}
@@ -185,6 +209,16 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                   <Text className="mt-1 text-gray-900">{formatDate(task.createdAt)}</Text>
                 </div>
                 <div>
+                  <Text className="text-sm font-medium text-gray-500">Due Date</Text>
+                  <Text className={`mt-1 ${
+                    task.dueDate && new Date(task.dueDate) < new Date() 
+                      ? 'text-red-600' 
+                      : 'text-gray-900'
+                  }`}>
+                    {task.dueDate ? formatDate(task.dueDate) : 'Not set'}
+                  </Text>
+                </div>
+                <div>
                   <Text className="text-sm font-medium text-gray-500">Last Updated</Text>
                   <Text className="mt-1 text-gray-900">{formatDate(task.updatedAt || new Date())}</Text>
                 </div>
@@ -201,6 +235,7 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                     value={editedTask.title}
                     onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
                     disabled={isSaving || isDeleting}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                   />
                 </div>
                 <div>
@@ -210,6 +245,29 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                     value={editedTask.description}
                     onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
                     disabled={isSaving || isDeleting}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                  />
+                </div>
+                <div>
+                  <Text className="block text-sm font-medium text-gray-700">Category</Text>
+                  <Input
+                    id="category"
+                    type="text"
+                    value={editedTask.category || ''}
+                    onChange={(e) => setEditedTask({ ...editedTask, category: e.target.value })}
+                    disabled={isSaving || isDeleting}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                  />
+                </div>
+                <div>
+                  <Text className="block text-sm font-medium text-gray-700">Due Date</Text>
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={editedTask.dueDate ? new Date(editedTask.dueDate).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setEditedTask({ ...editedTask, dueDate: new Date(e.target.value) })}
+                    disabled={isSaving || isDeleting}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                   />
                 </div>
               </div>
@@ -224,10 +282,11 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                     placeholder="Add new subtask"
                     onKeyPress={(e) => e.key === 'Enter' && addSubtask()}
                     disabled={isSaving || isDeleting}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                   />
                   <Button
                     onClick={addSubtask}
-                    className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400"
+                    className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400 px-3 py-2 rounded-md"
                     disabled={isSaving || isDeleting || !newSubtask.trim()}
                   >
                     <Plus className="w-4 h-4" />
@@ -271,9 +330,9 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                       { value: 'high', label: 'High' },
                     ]}
                     disabled={isSaving || isDeleting}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                   />
                 </div>
-
               </div>
             </>
           )}
@@ -284,21 +343,21 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             <div className="flex justify-between">
               <Button
                 onClick={() => setIsEditing(true)}
-                className="bg-gray-100 text-gray-700 hover:bg-gray-300 disabled:bg-gray-400"
+                className="bg-gray-100 text-gray-700 hover:bg-gray-300 disabled:bg-gray-400 px-3 py-2 rounded-md"
                 disabled={isDeleting}
               >
-                <Edit className="w-4 h-4 mr-1" />
+                <Edit className="w-4 h-4 mr-1" /> Edit
               </Button>
               <Button
                 onClick={handleDelete}
-                className="text-red-800 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-400"
+                className="text-red-800 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-400 px-3 py-2 rounded-md"
                 disabled={isDeleting}
               >
                 {isDeleting ? (
                   'Deleting...'
                 ) : (
                   <>
-                    <Trash2 className="w-4 h-4 mr-1" />
+                    <Trash2 className="w-4 h-4 mr-1" /> Delete
                   </>
                 )}
               </Button>
@@ -310,14 +369,14 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                   setIsEditing(false);
                   setEditedTask({ ...task });
                 }}
-                className="text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:bg-gray-200"
+                className="text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:bg-gray-200 px-3 py-2 rounded-md"
                 disabled={isSaving}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSave}
-                className="text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400"
+                className="text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 px-3 py-2 rounded-md"
                 disabled={isSaving}
               >
                 {isSaving ? 'Saving...' : 'Save Changes'}

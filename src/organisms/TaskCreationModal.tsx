@@ -21,7 +21,6 @@ const taskSchema = z.object({
   category: z.string().max(50, 'Category must be 50 characters or less').optional(),
   dueDate: z
     .string()
-    .optional()
     .refine((val) => !val || !isNaN(Date.parse(val)), {
       message: 'Invalid date format',
     })
